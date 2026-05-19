@@ -4,8 +4,6 @@
 
 > Built for labs that are tired of spreadsheets named `FINAL_v3_USE_THIS_ONE.xlsx`.
 
-![Screenshot placeholder — main view with storage tree, sample list and detail panel](docs/screenshot-main.png)
-
 ---
 
 ## What it does
@@ -78,14 +76,6 @@ Locus Arca lets you map your entire freezer infrastructure and track exactly whe
 5. Click **Speichern** to save — choose a location on a shared network drive if multiple people use it
 
 > **Tip:** Drop the HTML file and the JSON database on a shared network drive so the whole team can access it. Only one person should edit at a time — there's no conflict resolution for simultaneous edits.
-
----
-
-## Screenshots
-
-| Main view | Storage structure | Sample form |
-|-----------|------------------|-------------|
-| ![Main view](docs/screenshot-main.png) | ![Storage structure](docs/screenshot-structure.png) | ![Sample form](docs/screenshot-form.png) |
 
 ---
 
