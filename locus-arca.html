@@ -2266,12 +2266,13 @@ function renderTree() {
   const tree = document.getElementById('tree');
   let html = '';
 
-  // "All samples" root entry (not draggable)
+  // "All samples" root entry — only counts vorhanden
   const allActive = !treeFilter ? 'active' : '';
+  const vorhandenCount = db.samples.filter(s => s.status === 'vorhanden').length;
   html += `<div class="tree-item ${allActive}" style="--depth:0" onclick="setTreeFilter(null)">
     <span class="icon">🧊</span>
     <span class="label" data-i18n="allSamples">${t('allSamples')}</span>
-    <span class="badge">${db.samples.length}</span>
+    <span class="badge">${vorhandenCount}</span>
   </div>`;
 
   // "Nicht eingelagert" — samples with no storageLocation at all
@@ -2513,6 +2514,29 @@ function renderTree() {
       });
     });
   });
+
+  // Status filter entries at the bottom — all statuses except 'vorhanden'
+  const statusList = [
+    { key: 'entnommen',  color: 'var(--yellow)', i18n: 's_entnommen'  },
+    { key: 'reserviert', color: 'var(--purple)',  i18n: 's_reserviert' },
+    { key: 'verbraucht', color: 'var(--red)',     i18n: 's_verbraucht' },
+    { key: 'entsorgt',   color: 'var(--text3)',   i18n: 's_entsorgt'   },
+  ];
+  const anyStatus = statusList.some(({ key }) => db.samples.some(s => s.status === key));
+  if (anyStatus) {
+    html += `<div style="height:1px;background:var(--border);margin:6px 8px"></div>`;
+    statusList.forEach(({ key, color, i18n }) => {
+      const count = db.samples.filter(s => s.status === key).length;
+      if (count === 0) return;
+      const active = treeFilter?.type === 'status' && treeFilter?.id === key ? 'active' : '';
+      html += `<div class="tree-item ${active}" style="--depth:0" onclick="setTreeFilter('status','${key}')">
+        <span class="tree-toggle-gap"></span>
+        <span class="icon" style="font-size:9px;width:14px;height:14px;border-radius:50%;background:${color};opacity:0.85;display:inline-block;flex-shrink:0;margin-right:2px"></span>
+        <span class="label" style="color:${color}">${t(i18n)}</span>
+        <span class="badge">${count}</span>
+      </div>`;
+    });
+  }
 
   tree.innerHTML = html;
   treeDragInit();
@@ -3148,12 +3172,19 @@ function getFilteredSamples() {
   const ft = document.getElementById('filter-type').value;
 
   return db.samples.filter(s => {
+    // Show only vorhanden unless: search active, status dropdown set, or status tree filter
+    const isStatusFilter = treeFilter?.type === 'status';
+    const isLocationFilter = treeFilter && !isStatusFilter;
+    if (!st && !q && (!treeFilter || isLocationFilter)) {
+      if (s.status !== 'vorhanden') return false;
+    }
     if (st && s.status !== st) return false;
     if (ft && s.sampleType !== ft) return false;
     if (treeFilter) {
       const loc = s.storageLocation;
       if (treeFilter.type === 'freezer'   && loc?.freezerId    !== treeFilter.id) return false;
       if (treeFilter.type === 'unlocated' && loc?.freezerId) return false;
+      if (treeFilter.type === 'status'    && s.status          !== treeFilter.id) return false;
       if (treeFilter.type === 'fach'      && loc?.fachId       !== treeFilter.id) return false;
       if (treeFilter.type === 'rack'      && loc?.rackId       !== treeFilter.id) return false;
       if (treeFilter.type === 'schublade' && loc?.schubladeId  !== treeFilter.id) return false;
