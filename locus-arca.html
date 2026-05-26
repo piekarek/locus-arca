@@ -3770,6 +3770,17 @@ function onLocChange(level, loc) { locShowBoxPicker(loc); }
 // Multi-position selection for new samples
 let _selectedPositions = new Set();
 
+function statusCellStyle(s) {
+  if (!s) return '';
+  switch (s.status) {
+    case 'entnommen':  return 'background:rgba(240,192,64,0.18);border-color:var(--yellow);color:var(--yellow)';
+    case 'reserviert': return 'background:rgba(167,120,250,0.18);border-color:var(--purple);color:var(--purple)';
+    case 'verbraucht': return 'background:rgba(240,80,80,0.18);border-color:var(--red);color:var(--red)';
+    case 'entsorgt':   return 'background:rgba(155,166,200,0.18);border-color:var(--text3);color:var(--text3)';
+    default:           return ''; // vorhanden = standard blau
+  }
+}
+
 function renderGridPicker(box, preSelected) {
   const occupied = getOccupiedPositions(box.id);
   const positions = gridPositions(box.rows, box.cols, box.type);
@@ -3786,7 +3797,10 @@ function renderGridPicker(box, preSelected) {
     const isOcc = occupied.includes(pos);
     const isSel = _selectedPositions.has(pos);
     const cls = isSel ? 'free selected' : (isOcc ? 'occupied' : 'free');
-    return `<div class="box-cell ${cls}" title="${pos}${isOcc&&!isSel?' (belegt)':''}"
+    const occSample = isOcc && !isSel ? db.samples.find(s => s.storageLocation?.boxId === box.id && s.storageLocation?.position === pos && s._uid !== editingSampleId) : null;
+    const statusStyle = occSample ? statusCellStyle(occSample) : '';
+    const statusTitle = occSample?.status && occSample.status !== 'vorhanden' ? ` [${occSample.status}]` : '';
+    return `<div class="box-cell ${cls}" style="${statusStyle}" title="${occSample ? displayId(occSample)+(occSample.sampleType?' · '+occSample.sampleType:'')+statusTitle : pos}"
       onclick="selectGridPos('${pos}',${isOcc&&!isSel},event)">${pos}</div>`;
   }).join('');
 
@@ -4110,7 +4124,9 @@ function showBoxView(boxId) {
     const isSelected = s && s._uid === selectedSampleId;
     if (s) {
       const cls = isSelected ? 'box-cell free selected' : 'box-cell occupied';
-      html += `<div class="${cls}" title="${pos}: ${displayId(s)} (${s.sampleType||''})"
+      const statusStyle = isSelected ? '' : statusCellStyle(s);
+      const statusTitle = s.status && s.status !== 'vorhanden' ? ` [${s.status}]` : '';
+      html += `<div class="${cls}" style="${statusStyle}" title="${displayId(s)}${s.sampleType ? ' · '+s.sampleType : ''}${statusTitle}"
         onclick="selectSample('${s._uid}');document.getElementById('boxview-modal').style.display='none'"
         >${pos}</div>`;
     } else {
